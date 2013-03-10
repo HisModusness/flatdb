@@ -17,6 +17,7 @@
 
 void db_add(int fd, Person *person) {
     int chars_to_end = LINE_WIDTH;
+    long retval;
     
     // Would normally use define, but write() only takes char arrays
     char VALUE_SEPARATOR[1] = {','};
@@ -32,26 +33,46 @@ void db_add(int fd, Person *person) {
     long length = strlen(id);
     
     // Write the id to the file
-    write(fd, id, length);
+    retval = write(fd, id, length);
+    if (retval == -1) {
+        fprintf(stderr, "There was an error when writing to a file.\n");
+        exit(1);
+    }
     chars_to_end -= length;
     
     // Write the value separator
-    write(fd, VALUE_SEPARATOR, 1);
+    retval = write(fd, VALUE_SEPARATOR, 1);
+    if (retval == -1) {
+        fprintf(stderr, "There was an error when writing to a file.\n");
+        exit(1);
+    }
     chars_to_end -= 1;
     
     // Write the name to the file
     length = strlen(person->name);
-    write(fd, person->name, length);
+    retval = write(fd, person->name, length);
+    if (retval == -1) {
+        fprintf(stderr, "There was an error when writing to a file.\n");
+        exit(1);
+    }
     chars_to_end -= length;
     
     // Pad the line for uniform size
     while (chars_to_end > 1) {
-        write(fd, PAD_CHARACTER, 1);
+        retval = write(fd, PAD_CHARACTER, 1);
+        if (retval == -1) {
+            fprintf(stderr, "There was an error when writing to a file.\n");
+            exit(1);
+        }
         chars_to_end -= 1;
     }
     
     // Write the record separator
-    write(fd, RECORD_SEPARATOR, 1);
+    retval = write(fd, RECORD_SEPARATOR, 1);
+    if (retval == -1) {
+        fprintf(stderr, "There was an error when writing to a file.\n");
+        exit(1);
+    }
     
     printf("The person (id: %d, name: %s) was written to the file successfully.\n", person->id, person->name);
     
