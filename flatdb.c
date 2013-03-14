@@ -92,3 +92,43 @@ void db_remove(int fd, char *name) {
 void db_print(int fd) {
     
 }
+
+// Read a record in from the file. Assumes the fd is at the beginning of a record.
+// Returns the pointer back to where it started from.
+//
+// fd: File descriptor representing the file to read
+//
+// Returns: a Person struct with the values populated as stored
+Person db_get_current_record(int fd) {
+    Person record;
+    char id_string[11];
+    int i;
+    for (i = 0; i < 11; i++) {
+        read(fd, &id_string[i], 1);
+        if (id_string[i] == ',') {
+            id_string[i] = 0;
+            break;
+        }
+    }
+    record.id = atoi(id_string);
+    
+    char name[LINE_WIDTH - i];
+    
+    int j;
+    for (j = i; j < LINE_WIDTH; j++) {
+        read(fd, &name[j-i], 1);
+        if (name[j-i] == '\0' || name[j-i] == '\n') {
+            name[j-i] = '\0';
+            break;
+        }
+    }
+    
+    record.name = name;
+    
+    lseek(fd, -j, SEEK_CUR);
+    return record;
+}
+
+void db_seek_record(int fd) {
+    lseek(fd, LINE_WIDTH+1, SEEK_CUR);
+}

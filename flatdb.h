@@ -18,5 +18,7 @@ void db_add(int fd, Person *person);
 int db_get(int fd, char *name);
 void db_remove(int fd, char *name);
 void db_print(int fd);
+Person db_get_current_record(int fd);
+void db_seek_record(int fd);
 
 #endif
