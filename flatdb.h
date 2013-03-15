@@ -3,7 +3,7 @@
 //  flatdb
 //
 //  Created by Liam Westby on 3/10/13.
-//  Copyright (c) 2013 Me. All rights reserved.
+//  Person struct and function prototypes for the flatdb.
 //
 
 #ifndef flatdb_flatdb_h
@@ -20,5 +20,7 @@ void db_remove(int fd, char *name);
 void db_print(int fd);
 Person* db_get_current_record(int fd);
 void db_seek_record(int fd);
+int db_eof(int fd);
+int db_id_exists(int fd, int id);
 
 #endif

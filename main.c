@@ -14,46 +14,121 @@
 
 #include "flatdb.h"
 
+void cmd_add(int fd);
+void cmd_get(int fd);
+void cmd_remove(int fd);
+void cmd_print(int fd);
+
 int main(int argc, const char * argv[])
 {
-    Person *people = (Person *)malloc(sizeof(Person)*5);
-    people[0].id = 1;
-    strcpy(people[0].name, "Bill Gates");
+    printf("Welcome to FlatDB.\n");
+    printf("Copyright 2013 Oracle Corporation\n");
+    printf("\"We synergize your paradigms.\"\n");
+    printf("\n");
     
-    people[1].id = 2;
-    strcpy(people[1].name, "Steve Jobs");
+    char path[200];
+    int fd;
+    do {
+        printf("Enter the location of the database file. It does not need to exist; a blank one will be created for you if necessary.\n> ");
+        fgets(path, 200, stdin);
+        
+        fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+    } while (fd < 3);
     
-    people[2].id = 3;
-    strcpy(people[2].name, "Richard Stallman");
+    char command = 0;
     
-    people[3].id = 4;
-    strcpy(people[3].name, "Dennis Ritchie");
+    do {
+        printf("\n");
+        printf("Choose a command:\n");
+        printf("    _a_dd an entry\n");
+        printf("    _f_ind an ID\n");
+        printf("    _r_remove an entry\n");
+        printf("    _p_rint the database\n");
+        printf("    _q_uit the application\n");
+        printf("> ");
+        
+        command = fgetc(stdin);
+        getchar();
+        
+        printf("\n");
+        
+        switch (command) {
+            case 'a':
+                cmd_add(fd);
+                break;
+                
+            case 'f':
+                cmd_get(fd);
+                break;
+                
+            case 'r':
+                cmd_remove(fd);
+                break;
+                
+            case 'p':
+                cmd_print(fd);
+                break;
+                
+            default:
+                break;
+        }
+    } while (command != 'q');
     
-    people[4].id = 5;
-    strcpy(people[4].name, "Batman");
-    
-    int fd = open("/Users/lw322/Documents/db.txt", O_RDWR | O_CREAT | O_APPEND);
-    
-    if (fd > 2) {
-        db_add(fd, &people[0]);
-        db_add(fd, &people[1]);
-        db_add(fd, &people[2]);
-        db_add(fd, &people[3]);
-        db_add(fd, &people[4]);
-    }
-    
-    Person *test = db_get_current_record(fd);
-    if (test != NULL) printf("id: %d, name: %s\n", test->id, test->name);
-    
-    db_seek_record(fd);
-    
-    test = db_get_current_record(fd);
-    if (test != NULL)printf("id: %d, name: %s\n", test->id, test->name);
-    
+    printf("Thank you. Goodbye.\n");
     close(fd);
     
-    
     return 0;
+}
+
+void cmd_add(int fd) {
+    Person to_add;
+    char buffer[50];
+    
+    printf("Enter the ID number\n> ");
+    fgets(buffer, 10, stdin);
+    to_add.id = atoi(buffer);
+    
+    printf("Enter their name\n> ");
+    fgets(buffer, 49, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    strcpy(to_add.name, buffer);
+    
+    db_add(fd, &to_add);
+}
+
+void cmd_get(int fd) {
+    char buffer[100];
+    printf("Enter the name to get the ID of\n> ");
+    fgets(buffer, 100, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    int id = db_get(fd, buffer);
+    if (id > -1) {
+        printf("%s has an ID of %d\n", buffer, id);
+    }
+    else {
+        printf("%s was not found in the database.\n", buffer);
+    }
+}
+
+void cmd_remove(int fd) {
+    char buffer[100];
+    printf("Enter the name to remove\n> ");
+    fgets(buffer, 100, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    db_remove(fd, buffer);
+}
+
+void cmd_print(int fd) {
+    db_print(fd);
 }
 
 
