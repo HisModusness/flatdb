@@ -11,7 +11,7 @@
 
 typedef struct {
     int id;
-    char *name;
+    char name[50];
 } Person;
 
 void db_add(int fd, Person *person);

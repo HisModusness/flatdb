@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "flatdb.h"
 
@@ -17,19 +18,19 @@ int main(int argc, const char * argv[])
 {
     Person *people = (Person *)malloc(sizeof(Person)*5);
     people[0].id = 1;
-    people[0].name = "Bill Gates";
+    strcpy(people[0].name, "Bill Gates");
     
     people[1].id = 2;
-    people[1].name = "Steve Jobs";
+    strcpy(people[1].name, "Steve Jobs");
     
     people[2].id = 3;
-    people[2].name = "Richard Stallman";
+    strcpy(people[2].name, "Richard Stallman");
     
     people[3].id = 4;
-    people[3].name = "Dennis Ritchie";
+    strcpy(people[3].name, "Dennis Ritchie");
     
     people[4].id = 5;
-    people[4].name = "Balls Shepard";
+    strcpy(people[4].name, "Batman");
     
     int fd = open("/Users/lw322/Documents/db.txt", O_RDWR | O_CREAT | O_APPEND);
     

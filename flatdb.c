@@ -13,72 +13,30 @@
 
 #include "flatdb.h"
 
-#define LINE_WIDTH 100
+#define E_SEEK "An error occurred while seeking in the file.\n"
+#define E_WRITE_STRUCT "Something happend and only part of the person was written, or the person was not written. Exiting.\n"
+#define E_READ_STRUCT "Something happend while reading the Person in, and not all of the person was read in. Exiting.\n"
 
 void db_add(int fd, Person *person) {
-    int chars_to_end = LINE_WIDTH;
-    long retval;
     
-    // Would normally use define, but write() only takes char arrays
-    char VALUE_SEPARATOR[1] = {','};
-    char RECORD_SEPARATOR[1] = {'\n'};
-    char PAD_CHARACTER[1] = {'\0'};
-    
-    // Get to the end of the file so the new entry will be appended.
-    lseek(fd, 0, SEEK_END);
-    
-    // Convert the id to a string.
-    char id[10];
-    sprintf(id, "%d", person->id);
-    long length = strlen(id);
-    
-    // Write the id to the file
-    retval = write(fd, id, length);
-    if (retval == -1) {
-        fprintf(stderr, "There was an error when writing to a file.\n");
-        exit(1);
-    }
-    chars_to_end -= length;
-    
-    // Write the value separator
-    retval = write(fd, VALUE_SEPARATOR, 1);
-    if (retval == -1) {
-        fprintf(stderr, "There was an error when writing to a file.\n");
-        exit(1);
-    }
-    chars_to_end -= 1;
-    
-    // Write the name to the file
-    length = strlen(person->name);
-    retval = write(fd, person->name, length);
-    if (retval == -1) {
-        fprintf(stderr, "There was an error when writing to a file.\n");
-        exit(1);
-    }
-    chars_to_end -= length;
-    
-    // Pad the line for uniform size
-    while (chars_to_end > 1) {
-        retval = write(fd, PAD_CHARACTER, 1);
-        if (retval == -1) {
-            fprintf(stderr, "There was an error when writing to a file.\n");
-            exit(1);
-        }
-        chars_to_end -= 1;
-    }
-    
-    // Write the record separator
-    retval = write(fd, RECORD_SEPARATOR, 1);
-    if (retval == -1) {
-        fprintf(stderr, "There was an error when writing to a file.\n");
+    // We are to append to the end of the file
+    if (lseek(fd, 0, SEEK_END) == -1) {
+        write(2, E_SEEK, strlen(E_SEEK));
         exit(1);
     }
     
-    printf("The person (id: %d, name: %s) was written to the file successfully.\n", person->id, person->name);
+    // Through the magic of television, all we really have to do is write the struct out
+    // The char array is allocated statically, so it is written as well
+    if (write(fd, person, sizeof(Person)) < sizeof(Person)) {
+        write(2, E_WRITE_STRUCT, strlen(E_WRITE_STRUCT));
+        exit(1);
+    }
     
-    // Reset the fd to the beginning of the file.
-    lseek(fd, 0, SEEK_SET);
-    
+    // For predictible behavior, seek to the beginning.
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+        write(2, E_SEEK, strlen(E_SEEK));
+        exit(1);
+    }
 }
 
 int db_get(int fd, char *name) {
@@ -100,35 +58,26 @@ void db_print(int fd) {
 //
 // Returns: a Person struct with the values populated as stored
 Person db_get_current_record(int fd) {
-    Person record;
-    char id_string[11];
-    int i;
-    for (i = 0; i < 11; i++) {
-        read(fd, &id_string[i], 1);
-        if (id_string[i] == ',') {
-            id_string[i] = 0;
-            break;
-        }
-    }
-    record.id = atoi(id_string);
+    Person result;
     
-    char name[LINE_WIDTH - i];
-    
-    int j;
-    for (j = i; j < LINE_WIDTH; j++) {
-        read(fd, &name[j-i], 1);
-        if (name[j-i] == '\0' || name[j-i] == '\n') {
-            name[j-i] = '\0';
-            break;
-        }
+    if (read(fd, &result, sizeof(Person)) < sizeof(Person)) {
+        write(2, E_READ_STRUCT, strlen(E_READ_STRUCT));
+        exit(1);
     }
     
-    record.name = name;
+    // Uphold the contract of the method; seek to where the cursor was previously.
+    if (lseek(fd, -sizeof(Person), SEEK_CUR) == -1) {
+        write(2, E_SEEK, strlen(E_SEEK));
+        exit(1);
+    }
     
-    lseek(fd, -j, SEEK_CUR);
-    return record;
+    return result;
 }
 
 void db_seek_record(int fd) {
-    lseek(fd, LINE_WIDTH+1, SEEK_CUR);
+    // Seek along Person lines, to keep pointer aligned to data.
+    if (lseek(fd, sizeof(Person), SEEK_CUR) == -1) {
+        write(2, E_SEEK, strlen(E_SEEK));
+        exit(1);
+    }
 }
