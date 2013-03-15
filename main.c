@@ -42,13 +42,13 @@ int main(int argc, const char * argv[])
         db_add(fd, &people[4]);
     }
     
-    Person test = db_get_current_record(fd);
-    printf("id: %d, name: %s\n", test.id, test.name);
+    Person *test = db_get_current_record(fd);
+    if (test != NULL) printf("id: %d, name: %s\n", test->id, test->name);
     
     db_seek_record(fd);
     
     test = db_get_current_record(fd);
-    printf("id: %d, name: %s\n", test.id, test.name);
+    if (test != NULL)printf("id: %d, name: %s\n", test->id, test->name);
     
     close(fd);
     

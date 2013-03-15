@@ -14,8 +14,8 @@
 #include "flatdb.h"
 
 #define E_SEEK "An error occurred while seeking in the file.\n"
-#define E_WRITE_STRUCT "Something happend and only part of the person was written, or the person was not written. Exiting.\n"
-#define E_READ_STRUCT "Something happend while reading the Person in, and not all of the person was read in. Exiting.\n"
+#define E_WRITE_STRUCT "Something happend and only part of the person was written, or the person was not written.\n"
+#define E_READ_STRUCT "Something happend while reading the Person in, and not all of the person was read in.\n"
 
 void db_add(int fd, Person *person) {
     
@@ -57,18 +57,17 @@ void db_print(int fd) {
 // fd: File descriptor representing the file to read
 //
 // Returns: a Person struct with the values populated as stored
-Person db_get_current_record(int fd) {
+Person* db_get_current_record(int fd) {
     Person result;
     
     if (read(fd, &result, sizeof(Person)) < sizeof(Person)) {
         write(2, E_READ_STRUCT, strlen(E_READ_STRUCT));
-        exit(1);
+        return NULL;
     }
     
     // Uphold the contract of the method; seek to where the cursor was previously.
     if (lseek(fd, -sizeof(Person), SEEK_CUR) == -1) {
         write(2, E_SEEK, strlen(E_SEEK));
-        exit(1);
     }
     
     return result;
