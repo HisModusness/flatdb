@@ -28,12 +28,6 @@
  * person: The person to write to the database.
  */
 void db_add(int fd, Person *person) {
-    // ID is a primary key for this database, so it must be unique.
-    if (db_id_exists(fd, person->id)) {
-        write(2, M_DUPLICATE, strlen(M_DUPLICATE));
-        return;
-    }
-    
     // We are to append to the end of the file
     if (lseek(fd, 0, SEEK_END) == -1) {
         write(2, E_SEEK, strlen(E_SEEK));
