@@ -14,10 +14,10 @@ typedef struct {
     char name[50];
 } Person;
 
-void db_add(int fd, Person *person);
-int db_get(int fd, char *name);
-void db_remove(int fd, char *name);
-void db_print(int fd);
+void db_add(char *filepath, Person *person);
+int db_get(char *filepath, char *name);
+void db_remove(char *filepath, char *name);
+void db_print(char *filepath);
 Person* db_get_current_record(int fd);
 void db_seek_record(int fd);
 int db_eof(int fd);

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "flatdb.h"
 
@@ -27,7 +28,13 @@
  * fd: The file descriptor to write to.
  * person: The person to write to the database.
  */
-void db_add(int fd, Person *person) {
+void db_add(char *filepath, Person *person) {
+    int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+    if (fd < 3) {
+        printf("The file %s was not found.\n", filepath);
+        exit(1);
+    }
+    
     // We are to append to the end of the file
     if (lseek(fd, 0, SEEK_END) == -1) {
         write(2, E_SEEK, strlen(E_SEEK));
@@ -51,6 +58,8 @@ void db_add(int fd, Person *person) {
         write(2, E_SEEK, strlen(E_SEEK));
         exit(1);
     }
+    
+    close(fd);
 }
 
 /* Get the ID associated with a given name. The cursor is left just before the matching record, 
@@ -61,7 +70,13 @@ void db_add(int fd, Person *person) {
  *
  * Returns: ID of the person if found, -1 if not.
  */
-int db_get(int fd, char *name) {
+int db_get(char *filepath, char *name) {
+    int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+    if (fd < 3) {
+        printf("The file %s was not found.\n", filepath);
+        exit(1);
+    }
+    
     // Start at the beginning.
     if (lseek(fd, 0, SEEK_SET) == -1) {
         write(2, E_SEEK, strlen(E_SEEK));
@@ -78,6 +93,8 @@ int db_get(int fd, char *name) {
         to_check = db_get_current_record(fd);
     }
     return -1;
+    
+    close(fd);
 }
 
 /* Remove the first person found with the given name.
@@ -85,10 +102,16 @@ int db_get(int fd, char *name) {
  * fd: File descriptor to read from.
  * name: Name to look for.
  */
-void db_remove(int fd, char *name) {
-    if (db_get(fd, name) == -1) {
+void db_remove(char *filepath, char *name) {
+    if (db_get(filepath, name) == -1) {
         write(1, M_NOT_FOUND, strlen(M_NOT_FOUND));
         return;
+    }
+    
+    int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+    if (fd < 3) {
+        printf("The file %s was not found.\n", filepath);
+        exit(1);
     }
     
     // Now we not only know where it is, we're positioned right before it.
@@ -114,13 +137,21 @@ void db_remove(int fd, char *name) {
     char person_data[100];
     sprintf(person_data, "id: %d, name: %s removed.\n", to_remove->id, to_remove->name);
     write(1, person_data, strlen(person_data));
+    
+    close(fd);
 }
 
 /* Print the database to standard output.
  *
  * fd: File descriptor to read from.
  */
-void db_print(int fd) {
+void db_print(char *filepath) {
+    int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+    if (fd < 3) {
+        printf("The file %s was not found.\n", filepath);
+        exit(1);
+    }
+    
     off_t position = lseek(fd, 0, SEEK_CUR);
     
     // Start at the beginning.
