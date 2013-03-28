@@ -22,10 +22,9 @@
 #define M_DUPLICATE "An entry with that ID is already stored.\n"
 #define M_NOT_FOUND "That name was not found in the database.\n"
 
-/* Add an entry to the database. The offset is returned to its location after this method runs.
- * No duplicate entries (as decided by the ID) are allowed.
+/* Add an entry to the database.
  *
- * fd: The file descriptor to write to.
+ * filepath: path of the file to open.
  * person: The person to write to the database.
  */
 void db_add(char *filepath, Person *person) {
@@ -62,10 +61,9 @@ void db_add(char *filepath, Person *person) {
     close(fd);
 }
 
-/* Get the ID associated with a given name. The cursor is left just before the matching record, 
- * or at the end of the file if not found. Returns the first ID associated with the name.
+/* Get the ID associated with a given name. Returns the first ID associated with the name.
  *
- * fd: File descriptor to read from.
+ * filepath: The path to the database file.
  * name: Name to look for.
  *
  * Returns: ID of the person if found, -1 if not.
@@ -127,7 +125,7 @@ int db_get_remove(int fd, char *name) {
 
 /* Remove the first person found with the given name.
  *
- * fd: File descriptor to read from.
+ * filepath: Path to database file.
  * name: Name to look for.
  */
 void db_remove(char *filepath, char *name) {
@@ -176,7 +174,7 @@ void db_remove(char *filepath, char *name) {
 
 /* Print the database to standard output.
  *
- * fd: File descriptor to read from.
+ * filepath: Path to database file.
  */
 void db_print(char *filepath) {
     int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);

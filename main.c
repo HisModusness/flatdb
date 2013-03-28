@@ -21,16 +21,18 @@ void cmd_print(char *filepath);
 
 void print_usage();
 void run_interactive();
-void run_multiprocess(int argc, const char **argv);
-void run_worker(int argc, const char **argv);
+void run_multiprocess(const char **argv);
+void run_worker(const char **argv);
 
 int main(int argc, const char * argv[])
 {
+    // Too few arguments specified.
     if (argc < 2) {
         print_usage();
         return 0;
     }
     
+    // One argument specified, should only be the interactive mode.
     if (argc == 2) {
         if (!strcmp("-i", argv[1])) {
             run_interactive();
@@ -41,14 +43,16 @@ int main(int argc, const char * argv[])
         return 0;
     }
     
+    // Two arguments. The first should either be the demonstration or worker flag.
+    // The second is assumed to be a file path; errors with that are handled further down.
     if (argc == 3) {
         if (!strcmp("-d", argv[1])) {
-            run_multiprocess(argc, argv);
+            run_multiprocess(argv);
             return 0;
         }
         
         if (!strcmp("-w", argv[1])) {
-            run_worker(argc, argv);
+            run_worker(argv);
             return 0;
         }
         
@@ -56,10 +60,15 @@ int main(int argc, const char * argv[])
         return 0;
     }
     
+    // Anything more and it was used wrong.
     print_usage();
     return 0;
 }
 
+/* Interactive function to add a person. Prompts user for id and name, then invokes DB's add function.
+ *
+ * filepath: the path of the db file. DB will open it.
+ */
 void cmd_add(char *filepath) {
     Person to_add;
     char buffer[50];
@@ -79,6 +88,10 @@ void cmd_add(char *filepath) {
     db_add(filepath, &to_add);
 }
 
+/* Interactive function to get a person. Prompts user for name, then invokes DB's get function.
+ *
+ * filepath: the path of the db file. DB will open it.
+ */
 void cmd_get(char *filepath) {
     char buffer[100];
     printf("Enter the name to get the ID of\n> ");
@@ -96,6 +109,10 @@ void cmd_get(char *filepath) {
     }
 }
 
+/* Interactive function to remove a person. Prompts user for name, then invokes DB's remove function.
+ *
+ * filepath: the path of the db file. DB will open it.
+ */
 void cmd_remove(char *filepath) {
     char buffer[100];
     printf("Enter the name to remove\n> ");
@@ -107,16 +124,23 @@ void cmd_remove(char *filepath) {
     db_remove(filepath, buffer);
 }
 
+/* Prints the current database. Really just invokes the DB's print method.
+ *
+ * filepath: the path of the db file. DB will open it.
+ */
 void cmd_print(char *filepath) {
     db_print(filepath);
 }
 
+
+/* Print the usage of the program */
 void print_usage() {
     printf("USAGE:\n");
     printf("\tfladb (-i | -d) [path]\n");
     printf("\tNote: path not needed if -i option specified.\n");
 }
 
+/* Run the database program interactively. Will repeatedly prompt for a command. */
 void run_interactive() {
     printf("Welcome to FlatDB.\n");
     printf("Copyright 2013 Oracle Corporation\n");
@@ -169,7 +193,13 @@ void run_interactive() {
     printf("Thank you. Goodbye.\n");
 }
 
-void run_multiprocess(int argc, const char **argv) {
+/* The parent part of the multiprocess demonstration.
+ * Generates an argv array, then forks three processes and execs this program with the -w flag.
+ * Waits for all children to terminate, then prints the database contents.
+ *
+ * argv: argument list passed into this program.
+ */
+void run_multiprocess(const char **argv) {
     char **args;
     args = (char**)malloc(sizeof(char*)*4);
     
@@ -219,7 +249,13 @@ void run_multiprocess(int argc, const char **argv) {
     }
 }
 
-void run_worker(int argc, const char **argv) {
+/* The child part of the multiprocess demonstration.
+ * Attempts to add 10 entries of {process_x, x} where x is pid, then remove 9 of them.
+ * Uses file locking; the add or remove command will not happen until the lockfile is created successfully.
+ *
+ * argv: argument list passed into this program.
+ */
+void run_worker(const char **argv) {
     char lockfile[200];
     strcpy(lockfile, argv[2]);
     strcat(lockfile, ".lock");
@@ -227,7 +263,6 @@ void run_worker(int argc, const char **argv) {
     int pid = getpid();
     
     for (int i = 0; i < 10; i++) {
-        printf("%d: Going to add\n", pid);
         while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) { }
         Person to_add;
         to_add.id = pid;
@@ -239,7 +274,6 @@ void run_worker(int argc, const char **argv) {
     }
     
     for (int i = 0; i < 9; i++) {
-        printf("%d: Going to remove\n", pid);
         while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) { }
         char name[30];
         sprintf(name, "process_%d", pid);
