@@ -16,6 +16,7 @@ typedef struct {
 
 void db_add(char *filepath, Person *person);
 int db_get(char *filepath, char *name);
+int db_get_remove(int fd, char *name);
 void db_remove(char *filepath, char *name);
 void db_print(char *filepath);
 Person* db_get_current_record(int fd);

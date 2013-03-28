@@ -97,21 +97,54 @@ int db_get(char *filepath, char *name) {
     close(fd);
 }
 
+/* Get the ID associated with a given name. The cursor is left just before the matching record,
+ * or at the end of the file if not found. Returns the first ID associated with the name.
+ *
+ * fd: File descriptor to read from.
+ * name: Name to look for.
+ *
+ * Returns: ID of the person if found, -1 if not.
+ */
+int db_get_remove(int fd, char *name) {
+    // Start at the beginning.
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+        write(2, E_SEEK, strlen(E_SEEK));
+        exit(1);
+    }
+    Person *to_check = db_get_current_record(fd);
+    
+    while (to_check != NULL) {
+        if (!strcmp(to_check->name, name)) return to_check->id;
+        
+        // Since we successfully read the record in, we know we can skip over it fine.
+        db_seek_record(fd);
+        if (db_eof(fd)) break;
+        to_check = db_get_current_record(fd);
+    }
+    return -1;
+}
+
+
 /* Remove the first person found with the given name.
  *
  * fd: File descriptor to read from.
  * name: Name to look for.
  */
 void db_remove(char *filepath, char *name) {
-    if (db_get(filepath, name) == -1) {
-        write(1, M_NOT_FOUND, strlen(M_NOT_FOUND));
-        return;
-    }
+//    if (db_get(filepath, name) == -1) {
+//        write(1, M_NOT_FOUND, strlen(M_NOT_FOUND));
+//        return;
+//    }
     
     int fd = open(filepath, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
     if (fd < 3) {
         printf("The file %s was not found.\n", filepath);
         exit(1);
+    }
+    
+    if (db_get_remove(fd, name) == -1) {
+        write(1, M_NOT_FOUND, strlen(M_NOT_FOUND));
+        return;
     }
     
     // Now we not only know where it is, we're positioned right before it.
