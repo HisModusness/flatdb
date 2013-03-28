@@ -19,8 +19,105 @@ void cmd_get(int fd);
 void cmd_remove(int fd);
 void cmd_print(int fd);
 
+void print_usage();
+void run_interactive();
+void run_multiprocess(int argc, const char **argv);
+void run_worker(int argc, const char **argv);
+
 int main(int argc, const char * argv[])
 {
+    if (argc < 2) {
+        print_usage();
+        return 0;
+    }
+    
+    if (argc == 2) {
+        if (!strcmp("-i", argv[1])) {
+            run_interactive();
+            return 0;
+        }
+        
+        print_usage();
+        return 0;
+    }
+    
+    if (argc == 3) {
+        if (!strcmp("-d", argv[1])) {
+            run_multiprocess(argc, argv);
+            return 0;
+        }
+        
+        if (!strcmp("-w", argv[1])) {
+            run_worker(argc, argv);
+            return 0;
+        }
+        
+        print_usage();
+        return 0;
+    }
+    
+    print_usage();
+    return 0;
+}
+
+void cmd_add(int fd) {
+    Person to_add;
+    char buffer[50];
+    
+    printf("Enter the ID number\n> ");
+    fgets(buffer, 10, stdin);
+    to_add.id = atoi(buffer);
+    
+    printf("Enter their name\n> ");
+    fgets(buffer, 49, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    strcpy(to_add.name, buffer);
+    
+    db_add(fd, &to_add);
+}
+
+void cmd_get(int fd) {
+    char buffer[100];
+    printf("Enter the name to get the ID of\n> ");
+    fgets(buffer, 100, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    int id = db_get(fd, buffer);
+    if (id > -1) {
+        printf("%s has an ID of %d\n", buffer, id);
+    }
+    else {
+        printf("%s was not found in the database.\n", buffer);
+    }
+}
+
+void cmd_remove(int fd) {
+    char buffer[100];
+    printf("Enter the name to remove\n> ");
+    fgets(buffer, 100, stdin);
+    
+    unsigned long end = strlen(buffer) - 1;
+    if (buffer[end] == '\n') buffer[end] = '\0';
+    
+    db_remove(fd, buffer);
+}
+
+void cmd_print(int fd) {
+    db_print(fd);
+}
+
+void print_usage() {
+    printf("USAGE:\n");
+    printf("\tfladb (-i | -d) [path]\n");
+    printf("\tNote: path not needed if -i option specified.\n");
+}
+
+void run_interactive() {
     printf("Welcome to FlatDB.\n");
     printf("Copyright 2013 Oracle Corporation\n");
     printf("\"We synergize your paradigms.\"\n");
@@ -76,59 +173,14 @@ int main(int argc, const char * argv[])
     
     printf("Thank you. Goodbye.\n");
     close(fd);
-    
-    return 0;
 }
 
-void cmd_add(int fd) {
-    Person to_add;
-    char buffer[50];
+void run_multiprocess(int argc, const char **argv) {
     
-    printf("Enter the ID number\n> ");
-    fgets(buffer, 10, stdin);
-    to_add.id = atoi(buffer);
-    
-    printf("Enter their name\n> ");
-    fgets(buffer, 49, stdin);
-    
-    unsigned long end = strlen(buffer) - 1;
-    if (buffer[end] == '\n') buffer[end] = '\0';
-    
-    strcpy(to_add.name, buffer);
-    
-    db_add(fd, &to_add);
 }
 
-void cmd_get(int fd) {
-    char buffer[100];
-    printf("Enter the name to get the ID of\n> ");
-    fgets(buffer, 100, stdin);
+void run_worker(int argc, const char **argv) {
     
-    unsigned long end = strlen(buffer) - 1;
-    if (buffer[end] == '\n') buffer[end] = '\0';
-    
-    int id = db_get(fd, buffer);
-    if (id > -1) {
-        printf("%s has an ID of %d\n", buffer, id);
-    }
-    else {
-        printf("%s was not found in the database.\n", buffer);
-    }
-}
-
-void cmd_remove(int fd) {
-    char buffer[100];
-    printf("Enter the name to remove\n> ");
-    fgets(buffer, 100, stdin);
-    
-    unsigned long end = strlen(buffer) - 1;
-    if (buffer[end] == '\n') buffer[end] = '\0';
-    
-    db_remove(fd, buffer);
-}
-
-void cmd_print(int fd) {
-    db_print(fd);
 }
 
 
