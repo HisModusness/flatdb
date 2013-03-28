@@ -14,10 +14,10 @@
 
 #include "flatdb.h"
 
-void cmd_add(int fd);
-void cmd_get(int fd);
-void cmd_remove(int fd);
-void cmd_print(int fd);
+void cmd_add(char *filepath);
+void cmd_get(char *filepath);
+void cmd_remove(char *filepath);
+void cmd_print(char *filepath);
 
 void print_usage();
 void run_interactive();
@@ -60,7 +60,7 @@ int main(int argc, const char * argv[])
     return 0;
 }
 
-void cmd_add(int fd) {
+void cmd_add(char *filepath) {
     Person to_add;
     char buffer[50];
     
@@ -76,10 +76,10 @@ void cmd_add(int fd) {
     
     strcpy(to_add.name, buffer);
     
-    db_add(fd, &to_add);
+    db_add(filepath, &to_add);
 }
 
-void cmd_get(int fd) {
+void cmd_get(char *filepath) {
     char buffer[100];
     printf("Enter the name to get the ID of\n> ");
     fgets(buffer, 100, stdin);
@@ -87,7 +87,7 @@ void cmd_get(int fd) {
     unsigned long end = strlen(buffer) - 1;
     if (buffer[end] == '\n') buffer[end] = '\0';
     
-    int id = db_get(fd, buffer);
+    int id = db_get(filepath, buffer);
     if (id > -1) {
         printf("%s has an ID of %d\n", buffer, id);
     }
@@ -96,7 +96,7 @@ void cmd_get(int fd) {
     }
 }
 
-void cmd_remove(int fd) {
+void cmd_remove(char *filepath) {
     char buffer[100];
     printf("Enter the name to remove\n> ");
     fgets(buffer, 100, stdin);
@@ -104,11 +104,11 @@ void cmd_remove(int fd) {
     unsigned long end = strlen(buffer) - 1;
     if (buffer[end] == '\n') buffer[end] = '\0';
     
-    db_remove(fd, buffer);
+    db_remove(filepath, buffer);
 }
 
-void cmd_print(int fd) {
-    db_print(fd);
+void cmd_print(char *filepath) {
+    db_print(filepath);
 }
 
 void print_usage() {
@@ -124,13 +124,8 @@ void run_interactive() {
     printf("\n");
     
     char path[200];
-    int fd;
-    do {
-        printf("Enter the location of the database file. It does not need to exist; a blank one will be created for you if necessary.\n> ");
-        fgets(path, 200, stdin);
-        
-        fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
-    } while (fd < 3);
+    printf("Enter the location of the database file. It does not need to exist; a blank one will be created for you if necessary.\n> ");
+    fgets(path, 200, stdin);
     
     char command = 0;
     
@@ -151,19 +146,19 @@ void run_interactive() {
         
         switch (command) {
             case 'a':
-                cmd_add(fd);
+                cmd_add(path);
                 break;
                 
             case 'f':
-                cmd_get(fd);
+                cmd_get(path);
                 break;
                 
             case 'r':
-                cmd_remove(fd);
+                cmd_remove(path);
                 break;
                 
             case 'p':
-                cmd_print(fd);
+                cmd_print(path);
                 break;
                 
             default:
@@ -172,7 +167,6 @@ void run_interactive() {
     } while (command != 'q');
     
     printf("Thank you. Goodbye.\n");
-    close(fd);
 }
 
 void run_multiprocess(int argc, const char **argv) {
