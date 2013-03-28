@@ -170,11 +170,36 @@ void run_interactive() {
 }
 
 void run_multiprocess(int argc, const char **argv) {
+    char **args;
+    args = (char**)malloc(sizeof(char*)*4);
     
+    args[0] = argv[0];
+    args[1] = "-w";
+    args[2] = argv[2];
+    args[3] = (char *)0;
+    
+    int child1, child2, child3;
+    if ((child1 = fork()) != 0) {
+        execv(*args, args);
+    }
+    else if ((child2 = fork()) != 0) {
+        execv(*args, args);
+    }
+    else if ((child3 = fork()) != 0) {
+        execv(*args, args);
+    }
+    else {
+        sleep(1000);
+        int status;
+        while (wait(&status) != child1 || wait(&status) != child2 || wait(&status) != child3) {
+            // Empty so we just sort of hang around.
+        }
+        cmd_print(argv[2]);
+    }
 }
 
 void run_worker(int argc, const char **argv) {
-    
+    printf("Yeah I got executed.\n");
 }
 
 
