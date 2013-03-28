@@ -180,15 +180,12 @@ void run_multiprocess(int argc, const char **argv) {
     
     int child1, child2, child3;
     if ((child1 = fork()) == 0) {
-        printf("%d: Gonna execute.\n", getpid());
         execv(*args, args);
     }
     else if ((child2 = fork()) == 0) {
-        printf("%d: Gonna execute.\n", getpid());
         execv(*args, args);
     }
     else if ((child3 = fork()) == 0) {
-        printf("%d: Gonna execute.\n", getpid());
         execv(*args, args);
     }
     else {
@@ -204,19 +201,13 @@ void run_multiprocess(int argc, const char **argv) {
         
         while (1) {
             pid = wait(&status);
-            printf("Checking child 1\n");
             if (pid == child1) {
-                printf("Child 1 done.\n");
                 procs[0] = 0;
             }
-            printf("Checking child 2\n");
             if (pid == child2) {
-                printf("Child 2 done.\n");
                 procs[1] = 0;
             }
-            printf("Checking child 3\n");
             if (pid == child3) {
-                printf("Child 3 done.\n");
                 procs[2] = 0;
             }
             if (procs[0] == 0 && procs[1] == 0 && procs[2] == 0) {
@@ -237,10 +228,7 @@ void run_worker(int argc, const char **argv) {
     
     for (int i = 0; i < 10; i++) {
         printf("%d: Going to add\n", pid);
-        while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) {
-            printf("%d: File was locked.\n", pid);
-            sleep(100);
-        }
+        while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) { }
         Person to_add;
         to_add.id = pid;
         sprintf(to_add.name, "process_%d", to_add.id);
@@ -252,10 +240,7 @@ void run_worker(int argc, const char **argv) {
     
     for (int i = 0; i < 9; i++) {
         printf("%d: Going to remove\n", pid);
-        while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) {
-            printf("%d: File was locked.\n", pid);
-            sleep(100);
-        }
+        while ((fd = open(lockfile, O_CREAT | O_EXCL)) < 3) { }
         char name[30];
         sprintf(name, "process_%d", pid);
         db_remove(argv[2], name);
