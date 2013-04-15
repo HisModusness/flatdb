@@ -1,5 +1,5 @@
 FlatDB.
 
-This program contains both the interactive functionality as it was for assignment 4, and the automatic multiprocess assignment from assignment 5. To execute the assignment5 functionality, compile and run with the following options:
+As with last time, this program contains the functionality of the two previous assignments in addition to the current one. You will find the specific enhancements in the thread_info struct, and the functions run_threaded() and run_threaded_worker(), all in main.c. All other code remains unchanged. To run this program in threaded demonstration mode, invoke it as:
 
-./a.out -d path/to/database
+./a.out -t path/to/database

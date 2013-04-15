@@ -6,11 +6,14 @@
 //  Copyright (c) 2013 Me. All rights reserved.
 //
 
+#define _REENTRANT
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "flatdb.h"
 
@@ -23,6 +26,14 @@ void print_usage();
 void run_interactive();
 void run_multiprocess(const char **argv);
 void run_worker(const char **argv);
+void run_threaded(char *path);
+void* run_threaded_worker(void* arg);
+
+typedef struct {
+    int threadid;               // Used as the Person id, and in the Person name
+    char *path;                 // Path to the db file so the thread can get at it.
+    pthread_mutex_t *lock;      // Pointer to the lock file that is shared among all threads.
+} thread_info;
 
 int main(int argc, const char * argv[])
 {
@@ -53,6 +64,11 @@ int main(int argc, const char * argv[])
         
         if (!strcmp("-w", argv[1])) {
             run_worker(argv);
+            return 0;
+        }
+        
+        if (!strcmp("-t", argv[1])) {
+            run_threaded(argv[2]);
             return 0;
         }
         
@@ -136,7 +152,7 @@ void cmd_print(char *filepath) {
 /* Print the usage of the program */
 void print_usage() {
     printf("USAGE:\n");
-    printf("\tfladb (-i | -d) [path]\n");
+    printf("\tfladb (-i | -d | -t) [path]\n");
     printf("\tNote: path not needed if -i option specified.\n");
 }
 
@@ -219,7 +235,7 @@ void run_multiprocess(const char **argv) {
         execv(*args, args);
     }
     else {
-        sleep(1000);
+        //sleep(1000);
         int status;
 
         int pid;
@@ -281,6 +297,100 @@ void run_worker(const char **argv) {
         close(fd);
         unlink(lockfile);
     }
+}
+
+/* The kickoff function for the multithreaded demo.
+ * Creates a mutex, info for five threads (see thread_info struct above), and the threads themselves.
+ * Joins to each thread when it finishes, then destroys the mutex and prints the database.
+ *
+ * path: the path to the database file.
+ */
+void run_threaded(char *path) {
+    // APPROACH //
+    // 1. Create the mutex that will protect the shared resource.
+    // 2. Create each thread by building up the info struct and sending it in as the parameter
+    // 3. Join to each thread to know when they have all finished.
+    // 4. Destroy the mutex, as it is no longer needed.
+    // 5. Print the database.
+    
+    // Various items needed to work with threads
+    pthread_mutex_t lock;               // The mutex. This will be shared amongst all threads.
+    int num_threads = 5;                // The number of threads. Collected here for convenience.
+    pthread_t threads[num_threads];     // The threads themselves, or rather where they will go.
+    thread_info about_threads[5];       // Information about each thread.
+    
+    // Create the mutex, or die.
+    if ((pthread_mutex_init(&lock, NULL)) != 0) {
+        fprintf(stderr, "An error occurred when initializing the mutex.\n");
+        exit(1);
+    }
+    
+    // Create each thread. If it fails just skip it.
+    for (int i = 0; i < num_threads; i++) {
+        about_threads[i].threadid = i;
+        about_threads[i].path = path;
+        about_threads[i].lock = &lock;
+        
+        if (pthread_create(&threads[i], NULL, &run_threaded_worker, (void *)&about_threads[i]) != 0) {
+            fprintf(stderr, "Whoops, that thread didn't work. Skipping it.\n");
+        }
+    }
+    
+    // Join each thread. Like waiting on process but easier.
+    for (int i = 0; i < num_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    // This mutex is over.
+    pthread_mutex_destroy(&lock);
+    
+    // Show the result.
+    cmd_print(path);
+}
+
+/* The worker method for the multithreaded demonstration. Almost identical to the multiprocess worker above.
+ * Each thread will attempt to acquire the lock, add a person with name "thread_x" and id x where x is the threadid assigned by me, then relinquish the lock.
+ * It will do this 10 times, then attempt to remove 9 of those entries (again, reacquiring the mutex per operation, and relinquishing when done with that one operation.)
+ *
+ * arg: void pointer to a single argument passed in from pthread_create().
+ *
+ * Returns: NULL in all cases. Return type only included for conformance with pthread_create().
+ */
+void* run_threaded_worker(void *arg) {
+    // Unpack the info struct
+    thread_info ti = *(thread_info*)arg;
+    
+    // Each time, acquire the lock, create a person with name and id using threadid from ti, add it, then unlock.
+    for (int i = 0; i < 10; i++) {
+        pthread_mutex_lock(ti.lock);
+        
+        //- CRITICAL SECTION -//
+        Person to_add;
+        to_add.id = ti.threadid;
+        sprintf(to_add.name, "thread_%d", ti.threadid);
+        
+        db_add(ti.path, &to_add);
+        
+        //- END CRITICAL SECTION -//
+        pthread_mutex_unlock(ti.lock);
+    }
+    
+    // Each time, acquire the lock, create the name to look for from threadid in ti, remove it, then unlock.
+    for (int i = 0; i < 9; i++) {
+        pthread_mutex_lock(ti.lock);
+        
+        //- CRITICAL SECTION -//
+        char name[30];
+        sprintf(name, "thread_%d", ti.threadid);
+        
+        db_remove(ti.path, name);
+        
+        //- END CRITICAL SECTION -//
+        pthread_mutex_unlock(ti.lock);
+    }
+    
+    // Cause we gotta.
+    return NULL;
 }
 
 
