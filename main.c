@@ -317,7 +317,7 @@ void run_threaded(char *path) {
     pthread_mutex_t lock;               // The mutex. This will be shared amongst all threads.
     int num_threads = 5;                // The number of threads. Collected here for convenience.
     pthread_t threads[num_threads];     // The threads themselves, or rather where they will go.
-    thread_info about_threads[5];       // Information about each thread.
+    thread_info about_threads[num_threads];       // Information about each thread.
     
     // Create the mutex, or die.
     if ((pthread_mutex_init(&lock, NULL)) != 0) {
