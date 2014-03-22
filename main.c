@@ -152,7 +152,7 @@ void cmd_print(char *filepath) {
 /* Print the usage of the program */
 void print_usage() {
     printf("USAGE:\n");
-    printf("\tfladb (-i | -d | -t) [path]\n");
+    printf("\tflatdb (-i | -d | -t) [path]\n");
     printf("\tNote: path not needed if -i option specified.\n");
 }
 
