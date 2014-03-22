@@ -163,9 +163,9 @@ void run_interactive() {
     printf("\"We synergize your paradigms.\"\n");
     printf("\n");
     
-    char path[200];
+    char path[255];
     printf("Enter the location of the database file. It does not need to exist; a blank one will be created for you if necessary.\n> ");
-    fgets(path, 200, stdin);
+    fgets(path, 255, stdin);
     
     char command = 0;
     
@@ -272,7 +272,7 @@ void run_multiprocess(const char **argv) {
  * argv: argument list passed into this program.
  */
 void run_worker(const char **argv) {
-    char lockfile[200];
+    char lockfile[250];
     strcpy(lockfile, argv[2]);
     strcat(lockfile, ".lock");
     int fd;
